@@ -28,13 +28,13 @@
 // ************************************************
 
 // Output Relay
-#define RelayPin 7
+#define RelayPin 8
 
 // One-Wire Temperature Sensor
 // (Use GPIO pins for power/ground to simplify the wiring)
-#define ONE_WIRE_BUS 2
-#define ONE_WIRE_PWR 3
-#define ONE_WIRE_GND 4
+#define ONE_WIRE_BUS 9
+#define ONE_WIRE_PWR 11
+#define ONE_WIRE_GND 12
 
 // ************************************************
 // PID Variables and constants
@@ -136,6 +136,7 @@ DeviceAddress tempSensor;
 void setup()
 {
    Serial.begin(9600);
+   Serial1.begin(115200);
 
    // Initialize Relay Control:
 
@@ -180,18 +181,18 @@ void setup()
    myPID.SetSampleTime(1000);
    myPID.SetOutputLimits(0, WindowSize);
 
-  // Run timer2 interrupt every 15 ms 
-  TCCR2A = 0;
-  TCCR2B = 1<<CS22 | 1<<CS21 | 1<<CS20;
+  // Run timer3 interrupt every 15 ms 
+  TCCR3A = 0;
+  TCCR3B = 0<<CS32 | 0<<CS31 | 1<<CS30;
 
-  //Timer2 Overflow Interrupt Enable
-  TIMSK2 |= 1<<TOIE2;
+  //Timer3 Overflow Interrupt Enable
+  TIMSK3 |= 1<<TOIE3;
 }
 
 // ************************************************
 // Timer Interrupt Handler
 // ************************************************
-SIGNAL(TIMER2_OVF_vect) 
+SIGNAL(TIMER3_OVF_vect) 
 {
   if (opState == OFF)
   {
@@ -487,11 +488,22 @@ void TuneD()
 // ************************************************
 void Run()
 {
+  
+   Serial1.print("# Run PID=");
+   Serial1.print(Kp);
+   Serial1.print(", ");
+   Serial1.print(Ki);
+   Serial1.print(", ");
+   Serial1.print(Kd);
+   Serial1.println("");
+  
    // set up the LCD's number of rows and columns: 
    lcd.print(F("Sp: "));
    lcd.print(Setpoint);
    lcd.write(1);
    lcd.print(F("C : "));
+   
+   
 
    SaveParameters();
    myPID.SetTunings(Kp,Ki,Kd);
@@ -550,6 +562,12 @@ void Run()
         Serial.print(Input);
         Serial.print(",");
         Serial.println(Output);
+        
+        Serial1.print(millis()/1000);
+        Serial1.print(", ");
+        Serial1.print(Input);
+        Serial1.print(", ");
+        Serial1.println(Output);
       }
 
       delay(100);
